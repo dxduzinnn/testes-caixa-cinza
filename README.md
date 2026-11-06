@@ -1,7 +1,7 @@
 # Testes Caixa Cinza em API de Autenticação — Supabase + Postman
 
-> **Aluno:** PREENCHER_NOME — **RA:** PREENCHER_RA — **Turma:** PREENCHER_TURMA
-> **Data de execução dos testes:** PREENCHER_DATA
+> **Aluno:** Eduardo Moraes — **RA:** 251255 — **Turma:** N4
+> **Data de execução dos testes:** 06/11/2026
 
 ## Sumário
 
@@ -49,19 +49,19 @@ Compreender e aplicar testes caixa cinza em uma API de autenticação, sendo cap
 
 ### Criação do projeto
 
-1. Acessei [supabase.com](https://supabase.com) e criei uma conta (PREENCHER: com GitHub ou com e-mail).
-2. No painel, cliquei em **New project**, escolhi a organização, defini o nome **PREENCHER_NOME_DO_PROJETO**, uma senha para o banco de dados e a região **PREENCHER_REGIÃO** (ex.: South America – São Paulo).
+1. Acessei [supabase.com](https://supabase.com) com a minha conta, vinculada à organização **dxduzinnn's Org** (plano Free).
+2. No painel, cliquei em **New project**, escolhi a organização, defini o nome **testes-auth-Eduardo**, uma senha para o banco de dados e a região **East US (North Virginia) – us-east-1**.
 3. Aguardei o provisionamento do projeto até o painel ficar disponível.
 
 ### Tipo de autenticação
 
 Foi utilizada a autenticação por **e-mail e senha** (provider *Email*), em **Authentication → Sign In / Providers → Email**, que já vem habilitada por padrão. Esse é o tipo de autenticação usado pelo endpoint `/auth/v1/token?grant_type=password`, em que o cliente envia e-mail e senha e recebe um token de acesso.
 
-PREENCHER: informar se a opção *Confirm email* ficou ligada ou desligada.
+A opção *Confirm email* ficou **ligada** (padrão). Por isso, o usuário de teste foi criado com **Auto Confirm User**: sem isso, o login retornaria erro de e-mail não confirmado. A opção *Allow new users to sign up* também está ligada.
 
 ### Criação do usuário de teste
 
-Em **Authentication → Users → Add user → Create new user**, criei o usuário **PREENCHER_EMAIL_DO_USUARIO** com uma senha definida por mim, marcando a opção **Auto Confirm User**, para que o usuário já ficasse confirmado e pudesse fazer login sem precisar confirmar o e-mail.
+Em **Authentication → Users → Add user → Create new user**, criei o usuário **teste.eduardo@exemplo.com** com uma senha definida por mim, marcando a opção **Auto Confirm User**, para que o usuário já ficasse confirmado e pudesse fazer login sem precisar confirmar o e-mail.
 
 ### Credenciais da API
 
@@ -70,7 +70,7 @@ Em **Project Settings → API Keys** (e **Data API** para a URL), obtive:
 | Informação | Onde encontrar | Uso nos testes |
 |---|---|---|
 | API URL (Project URL) | Project Settings → Data API | Base da URL das requisições (`base_url`) |
-| API KEY (anon / publishable) | Project Settings → API Keys | Headers `apikey` e `Authorization` (`api_key`) |
+| API KEY (publishable: `sb_publishable_...`) | Project Settings → API Keys | Headers `apikey` e `Authorization` (`api_key`) |
 
 > **Segurança:** foi usada apenas a chave **pública** (anon/publishable), que é feita para uso em clientes. A chave **service_role/secret** nunca foi usada nem exposta, pois ignora as regras de segurança do banco. A senha do usuário de teste não está publicada neste repositório.
 
@@ -93,11 +93,11 @@ Criar um ambiente de autenticação real e controlado, com um usuário conhecido
 
 ### Workspace
 
-No Postman Desktop, em **Workspaces → Create Workspace**, criei o workspace **PREENCHER_NOME_WORKSPACE** para concentrar todos os artefatos da atividade.
+No Postman Desktop, em **Workspaces → Create**, criei o workspace **Testes Caixa Cinza - Eduardo** (opção *Blank workspace*) para concentrar todos os artefatos da atividade. Em seguida, usei **File → Import** para importar a coleção e o environment que estão na pasta [`/postman`](postman/).
 
 ### Environment
 
-Em **Environments → +**, criei o environment **Supabase - Testes Auth** e o selecionei no canto superior direito. Um environment guarda valores que mudam de um ambiente para outro (URL, chaves, usuários), evitando digitá-los em cada requisição.
+O environment **Supabase - Testes Auth** foi importado, preenchido com a URL do projeto (`https://ecjlzmcdekxhrazogdio.supabase.co`), o e-mail do usuário de teste, a chave pública e a senha, e selecionado no canto superior direito. Um environment guarda valores que mudam de um ambiente para outro (URL, chaves, usuários), evitando digitá-los em cada requisição.
 
 | Variável | Descrição | Tipo |
 |---|---|---|
@@ -195,29 +195,68 @@ Em cada execução foram validados: **status HTTP**, **resposta JSON**, **mensag
 
 | Cenário | Entrada Utilizada | Resultado Esperado | Resultado Obtido | Status |
 |---|---|---|---|---|
-| CT01 – Login válido | Usuário correto + senha correta | Status 200 + access token | PREENCHER (ex.: 200, access_token retornado) | PREENCHER |
-| CT02 – Senha incorreta | Usuário correto + `SenhaErrada!999` | Erro de autenticação, sem token | PREENCHER (status + msg) | PREENCHER |
-| CT03 – Usuário inexistente | `usuario.inexistente.teste@exemplo.com` | Acesso negado, sem token | PREENCHER | PREENCHER |
-| CT04 – Campos vazios | `email: ""`, `password: ""` | Erro de validação | PREENCHER | PREENCHER |
-| CT05 – Credenciais inválidas | `email-sem-arroba` + `123` | Mensagem de erro | PREENCHER | PREENCHER |
-| CT06 – Sem apikey (extra) | Credenciais corretas, sem headers de chave | Status 401 | PREENCHER | PREENCHER |
+| CT01 – Login válido | Usuário correto + senha correta | Status 200 + access token | **200 OK** (1,82 s), `access_token` JWT, `token_type: bearer`, `expires_in: 3600` | OK |
+| CT02 – Senha incorreta | Usuário correto + `SenhaErrada!999` | Erro de autenticação, sem token | **400 Bad Request** (607 ms), `invalid_credentials` – "Invalid login credentials" | OK |
+| CT03 – Usuário inexistente | `usuario.inexistente.teste@exemplo.com` | Acesso negado, sem token | **400 Bad Request** (533 ms), `invalid_credentials` – "Invalid login credentials" | OK |
+| CT04 – Campos vazios | `email: ""`, `password: ""` | Erro de validação | **400 Bad Request** (469 ms), `validation_failed` – "missing email or phone" | OK |
+| CT05 – Credenciais inválidas | `email-sem-arroba` + `123` | Mensagem de erro | **400 Bad Request** (536 ms), `invalid_credentials` – "Invalid login credentials" | OK |
+| CT06 – Sem apikey (extra) | Credenciais corretas, sem headers de chave | Status 401 | **401 Unauthorized** (79 ms), "No API key found in request" | OK |
 
 ### Respostas observadas
 
-PREENCHER — cole aqui o JSON real retornado em cada cenário de erro. Exemplo de como documentar:
+**CT01 – Login válido (200 OK)** — resposta resumida (token encurtado):
 
 ```json
-// CT02 – Senha incorreta – Status PREENCHER
-COLE_AQUI_O_JSON_RETORNADO
+{
+  "access_token": "eyJhbGciOiJFUzI1NiIsImtpZCI6...",
+  "token_type": "bearer",
+  "expires_in": 3600,
+  "expires_at": 1794011750,
+  "refresh_token": "...",
+  "user": { "email": "teste.eduardo@exemplo.com", "role": "authenticated" }
+}
+```
+
+**CT02 – Senha incorreta** e **CT03 – Usuário inexistente** (400 Bad Request):
+
+```json
+{
+  "code": 400,
+  "error_code": "invalid_credentials",
+  "msg": "Invalid login credentials"
+}
+```
+
+**CT04 – Campos vazios** (400 Bad Request):
+
+```json
+{
+  "code": 400,
+  "error_code": "validation_failed",
+  "msg": "missing email or phone"
+}
+```
+
+**CT05 – Credenciais inválidas** (400 Bad Request): mesma resposta do CT02 (`invalid_credentials`).
+
+**CT06 – Sem apikey** (401 Unauthorized):
+
+```json
+{
+  "message": "No API key found in request",
+  "hint": "No `apikey` request header or url param was found."
+}
 ```
 
 ### Erros encontrados
 
-PREENCHER — descreva as diferenças entre o esperado e o obtido. Pontos a observar:
+Todos os cenários tiveram o comportamento esperado: o login válido gerou token e nenhum cenário inválido devolveu `access_token`. As observações relevantes foram:
 
-- CT02 e CT03 retornaram a **mesma** mensagem? (isso é esperado e desejável: a API não revela se o e-mail existe, evitando enumeração de usuários);
-- CT04 retornou mensagem de validação clara ou genérica?
-- CT05: a API validou o formato do e-mail ou apenas recusou as credenciais?
+- **CT02 e CT03 retornaram exatamente a mesma resposta.** Isso é desejável: a API não revela se o e-mail existe, o que impede a enumeração de usuários.
+- **CT04:** a mensagem "missing email or phone" cita apenas o e-mail/telefone e não informa que a senha também estava vazia.
+- **CT05:** a API **não valida o formato do e-mail** no login. Um e-mail sem `@` é tratado como credencial inválida (`invalid_credentials`), e não como erro de validação. Não é uma falha de segurança, mas a mensagem poderia ser mais específica.
+- **CT06:** a requisição sem `apikey` é barrada no gateway em 79 ms, antes de chegar ao serviço de autenticação.
+- O assistente do Postman sugeriu remover o header `Authorization`, porque a chave publishable (`sb_publishable_...`) não é um JWT. Mesmo assim, todas as requisições funcionaram com o header presente.
 
 ### Evidências
 
@@ -256,7 +295,7 @@ A documentação permite repetir os testes (reprodutibilidade), comprovar o que 
 
 ### Falhas identificadas
 
-PREENCHER — liste os testes com status *Falha* (se houver) e o motivo. Se todos passaram, explique que o comportamento obtido foi igual ao esperado e cite as observações relevantes (por exemplo, mensagens genéricas de erro).
+Nenhum teste ficou com status *Falha*: os 6 cenários tiveram o comportamento obtido igual ao esperado, e as 30 verificações automáticas do Postman passaram. Foram registradas, como observações, duas mensagens que poderiam ser mais específicas: a de campos vazios (CT04), que não menciona a senha, e a de e-mail em formato inválido (CT05), que é tratada como credencial inválida.
 
 ### Evidências
 
@@ -268,26 +307,30 @@ Exemplo de registro realizado:
 
 | ID | Cenário | Entrada | Resultado esperado | Resultado obtido | Status | Observações |
 |---|---|---|---|---|---|---|
-| CT01 | Login válido | e-mail e senha corretos | 200 + access_token | PREENCHER | PREENCHER | PREENCHER |
-| CT02 | Senha incorreta | senha `SenhaErrada!999` | Erro, sem token | PREENCHER | PREENCHER | PREENCHER |
+| CT01 | Login válido | e-mail e senha corretos | 200 + access_token | 200 OK em 1,82 s, access_token retornado, 6/6 testes | Sucesso | user.email confere com o usuário criado |
+| CT02 | Senha incorreta | senha `SenhaErrada!999` | Erro, sem token | 400, `invalid_credentials`, 6/6 testes | Sucesso | Mensagem genérica, não revela se o erro é no e-mail ou na senha |
+| CT05 | Credenciais inválidas | `email-sem-arroba` + `123` | Mensagem de erro, sem token | 400, `invalid_credentials`, 5/5 testes | Sucesso | Formato do e-mail não é validado no login |
 
 # Resultados Obtidos
 
-PREENCHER após a execução:
+Execução individual de cada requisição e execução completa pelo **Collection Runner** em 06/11/2026:
 
-| Total de testes | Sucesso | Falha |
-|---|---|---|
-| 6 | PREENCHER | PREENCHER |
+| Total de cenários | Sucesso | Falha | Assertivas no Runner | Duração do Runner | Tempo médio de resposta |
+|---|---|---|---|---|---|
+| 6 | 6 | 0 | 30 de 30 aprovadas | 2 s 554 ms | 342 ms |
 
-PREENCHER — resumo em 1 ou 2 parágrafos: o login válido retornou status e token? Os cenários inválidos foram bloqueados sem devolver token? Quais códigos e mensagens apareceram? Qual o tempo médio de resposta mostrado pelo Postman?
+O login válido (CT01) retornou **status 200** com `access_token`, `refresh_token`, `token_type: bearer` e validade de 3600 segundos (1 hora). Todos os cenários inválidos foram bloqueados sem devolver token: senha incorreta, usuário inexistente, campos vazios e credenciais inválidas retornaram **400 Bad Request**, e a requisição sem chave de API retornou **401 Unauthorized**. Os tempos de resposta ficaram entre 79 ms e 1,82 s, todos abaixo do limite de 3 s definido nos testes.
 
 # Conclusão
 
-PREENCHER com suas palavras (o professor exige análise própria). Responda obrigatoriamente:
+**Os testes foram executados corretamente?** Sim. Os cinco cenários obrigatórios e o cenário extra foram executados no Postman Desktop, primeiro individualmente e depois pelo Collection Runner, que aprovou as 30 verificações automáticas sem nenhuma falha.
 
-- **Os testes foram executados corretamente?**
-- **A autenticação funcionou?** (login válido gerou token? os inválidos foram bloqueados?)
-- **Quais dificuldades encontrei?** (ex.: localizar a API Key, confirmação de e-mail, configurar variáveis)
-- **Quais falhas foram identificadas?**
-- **Quais melhorias poderiam ser implementadas?** Ideias: mensagens de validação mais específicas para campos vazios e e-mail malformado; limite de tentativas (rate limit) e bloqueio após várias senhas erradas; exigência de senha forte; autenticação em dois fatores; automação dos testes com Newman em pipeline de CI.
-- **Qual a importância dos testes caixa cinza em APIs?** Conhecer parte da estrutura (endpoint, headers, formato do body e códigos de resposta) permite criar cenários mais direcionados do que no caixa preta — como remover a `apikey` ou enviar campos vazios — sem depender do código-fonte, aproximando o teste do que um cliente real ou um atacante faria.
+**A autenticação funcionou?** Sim. Com credenciais corretas, o Supabase devolveu status 200 e um `access_token` válido por 1 hora. Em todos os cenários inválidos o acesso foi negado e nenhum token foi gerado.
+
+**Quais dificuldades encontrei?** A primeira foi localizar as credenciais: o Supabase agora separa a chave **publishable** (pública, usada nos testes) da **secret** (privada, que não pode ser exposta). Também foi preciso marcar **Auto Confirm User** ao criar o usuário, porque a confirmação de e-mail está ligada no projeto. Por fim, a configuração do Environment exigiu atenção para não colocar a URL com barra no final e para salvar as variáveis antes de enviar as requisições.
+
+**Quais falhas foram identificadas?** Nenhuma falha de segurança: a API não gera token com credenciais erradas e responde da mesma forma para senha incorreta e usuário inexistente, evitando a enumeração de usuários. Foram observados dois pontos de melhoria nas mensagens: com campos vazios, a resposta cita apenas o e-mail (`missing email or phone`), e um e-mail em formato inválido é tratado como credencial inválida, sem uma validação de formato específica.
+
+**Quais melhorias poderiam ser implementadas?** Mensagens de validação mais específicas para campos vazios e e-mail malformado; limite de tentativas de login com bloqueio temporário (o Supabase oferece configurações de *Rate Limits* e *Attack Protection*, como CAPTCHA); exigência de senha forte; autenticação em dois fatores; e a automação destes testes com o **Newman** ou o **Postman CLI** em um pipeline de integração contínua, para que eles rodem a cada alteração.
+
+**Qual a importância dos testes caixa cinza em APIs?** Conhecer parte da estrutura da API — o endpoint, os headers obrigatórios, o formato do body e os códigos de resposta — permitiu planejar testes mais direcionados do que no caixa preta, como o CT06, que remove a `apikey` para verificar se a proteção do gateway funciona, ou o CT04, que testa a validação de campos vazios. Ao mesmo tempo, sem depender do código-fonte, o teste se aproxima do que um cliente real ou um atacante faria, ajudando a encontrar problemas de segurança e de usabilidade antes que cheguem à produção.
