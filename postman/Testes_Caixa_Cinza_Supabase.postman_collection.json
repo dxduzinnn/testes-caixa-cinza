@@ -1,0 +1,414 @@
+{
+  "info": {
+    "_postman_id": "e387f057-244c-4029-8725-7764b48a521d",
+    "name": "Testes Caixa Cinza - Supabase Auth",
+    "description": "Testes caixa cinza do endpoint de login (grant_type=password) do Supabase Auth.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "CT01 - Login válido",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+              "const j = pm.response.json();",
+              "pm.test(\"access_token retornado\", () => pm.expect(j.access_token).to.be.a(\"string\").and.not.empty);",
+              "pm.test(\"token_type = bearer\", () => pm.expect(j.token_type).to.eql(\"bearer\"));",
+              "pm.test(\"refresh_token retornado\", () => pm.expect(j.refresh_token).to.be.a(\"string\"));",
+              "pm.test(\"E-mail do usuário confere\", () => pm.expect(j.user.email).to.eql(pm.environment.get(\"email\").toLowerCase()));",
+              "pm.test(\"Tempo de resposta menor que 3s\", () => pm.expect(pm.response.responseTime).to.be.below(3000));",
+              "pm.environment.set(\"access_token\", j.access_token);",
+              "console.log(\"expires_in:\", j.expires_in, \"| token (início):\", (j.access_token||\"\").substring(0,25) + \"...\");"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "apikey",
+            "value": "{{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "description": "Credenciais corretas do usuário criado no Supabase. Esperado: 200 + access_token.",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/auth/v1/token?grant_type=password",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "auth",
+            "v1",
+            "token"
+          ],
+          "query": [
+            {
+              "key": "grant_type",
+              "value": "password"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "CT02 - Senha incorreta",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Status 400 (erro de autenticação)\", () => pm.response.to.have.status(400));",
+              "pm.test(\"error_code = invalid_credentials\", () => pm.expect(pm.response.json().error_code).to.eql(\"invalid_credentials\"));",
+              "",
+              "pm.test(\"Tempo de resposta menor que 3s\", () => pm.expect(pm.response.responseTime).to.be.below(3000));",
+              "pm.test(\"Resposta em JSON\", () => pm.response.to.be.json);",
+              "pm.test(\"Nenhum access_token foi retornado\", () => pm.expect(pm.response.json()).to.not.have.property(\"access_token\"));",
+              "pm.test(\"Mensagem de erro presente\", () => {",
+              "    const j = pm.response.json();",
+              "    pm.expect(j.msg || j.message || j.error_description || j.error).to.be.a(\"string\").and.not.empty;",
+              "});",
+              "console.log(\"Status:\", pm.response.code, \"| Corpo:\", pm.response.text());"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "apikey",
+            "value": "{{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "description": "E-mail existente com senha errada.",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"SenhaErrada!999\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/auth/v1/token?grant_type=password",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "auth",
+            "v1",
+            "token"
+          ],
+          "query": [
+            {
+              "key": "grant_type",
+              "value": "password"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "CT03 - Usuário inexistente",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Status 400 (acesso negado)\", () => pm.response.to.have.status(400));",
+              "pm.test(\"error_code = invalid_credentials\", () => pm.expect(pm.response.json().error_code).to.eql(\"invalid_credentials\"));",
+              "",
+              "pm.test(\"Tempo de resposta menor que 3s\", () => pm.expect(pm.response.responseTime).to.be.below(3000));",
+              "pm.test(\"Resposta em JSON\", () => pm.response.to.be.json);",
+              "pm.test(\"Nenhum access_token foi retornado\", () => pm.expect(pm.response.json()).to.not.have.property(\"access_token\"));",
+              "pm.test(\"Mensagem de erro presente\", () => {",
+              "    const j = pm.response.json();",
+              "    pm.expect(j.msg || j.message || j.error_description || j.error).to.be.a(\"string\").and.not.empty;",
+              "});",
+              "console.log(\"Status:\", pm.response.code, \"| Corpo:\", pm.response.text());"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "apikey",
+            "value": "{{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "description": "E-mail que não existe no projeto.",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"usuario.inexistente.teste@exemplo.com\",\n  \"password\": \"{{password}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/auth/v1/token?grant_type=password",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "auth",
+            "v1",
+            "token"
+          ],
+          "query": [
+            {
+              "key": "grant_type",
+              "value": "password"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "CT04 - Campos vazios",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Status 4xx (erro de validação)\", () => pm.expect(pm.response.code).to.be.within(400,422));",
+              "",
+              "pm.test(\"Tempo de resposta menor que 3s\", () => pm.expect(pm.response.responseTime).to.be.below(3000));",
+              "pm.test(\"Resposta em JSON\", () => pm.response.to.be.json);",
+              "pm.test(\"Nenhum access_token foi retornado\", () => pm.expect(pm.response.json()).to.not.have.property(\"access_token\"));",
+              "pm.test(\"Mensagem de erro presente\", () => {",
+              "    const j = pm.response.json();",
+              "    pm.expect(j.msg || j.message || j.error_description || j.error).to.be.a(\"string\").and.not.empty;",
+              "});",
+              "console.log(\"Status:\", pm.response.code, \"| Corpo:\", pm.response.text());"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "apikey",
+            "value": "{{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "description": "E-mail e senha vazios.",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"\",\n  \"password\": \"\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/auth/v1/token?grant_type=password",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "auth",
+            "v1",
+            "token"
+          ],
+          "query": [
+            {
+              "key": "grant_type",
+              "value": "password"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "CT05 - Credenciais inválidas",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Status 4xx\", () => pm.expect(pm.response.code).to.be.within(400,422));",
+              "",
+              "pm.test(\"Tempo de resposta menor que 3s\", () => pm.expect(pm.response.responseTime).to.be.below(3000));",
+              "pm.test(\"Resposta em JSON\", () => pm.response.to.be.json);",
+              "pm.test(\"Nenhum access_token foi retornado\", () => pm.expect(pm.response.json()).to.not.have.property(\"access_token\"));",
+              "pm.test(\"Mensagem de erro presente\", () => {",
+              "    const j = pm.response.json();",
+              "    pm.expect(j.msg || j.message || j.error_description || j.error).to.be.a(\"string\").and.not.empty;",
+              "});",
+              "console.log(\"Status:\", pm.response.code, \"| Corpo:\", pm.response.text());"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "apikey",
+            "value": "{{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "description": "E-mail em formato inválido e senha curta.",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"email-sem-arroba\",\n  \"password\": \"123\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/auth/v1/token?grant_type=password",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "auth",
+            "v1",
+            "token"
+          ],
+          "query": [
+            {
+              "key": "grant_type",
+              "value": "password"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "CT06 - Sem header apikey (extra)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Status 401 (sem chave de API)\", () => pm.response.to.have.status(401));",
+              "pm.test(\"Nenhum access_token foi retornado\", () => pm.expect(pm.response.text()).to.not.include(\"access_token\"));",
+              "console.log(\"Status:\", pm.response.code, \"| Corpo:\", pm.response.text());"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "description": "Teste extra de caixa cinza: requisição correta, mas sem os headers apikey/Authorization.",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/auth/v1/token?grant_type=password",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "auth",
+            "v1",
+            "token"
+          ],
+          "query": [
+            {
+              "key": "grant_type",
+              "value": "password"
+            }
+          ]
+        }
+      }
+    }
+  ]
+}
